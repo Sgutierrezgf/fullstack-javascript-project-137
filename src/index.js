@@ -1,2 +1,6 @@
 import 'bootstrap/dist/css/bootstrap.min.css';
-import './styles.scss';
+import app from './app.js';
+
+document.addEventListener('DOMContentLoaded', () => {
+  app();
+});
