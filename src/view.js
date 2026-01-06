@@ -1,19 +1,51 @@
-export default (elements, i18n) => (path, value) => {
-  if (path === 'form.status') {
-    if (value === 'invalid') {
-      elements.input.classList.add('is-invalid');
-      elements.feedback.textContent = i18n.t(elements.error);
-    }
+const renderFeeds = (feeds, container) => {
+  container.innerHTML = '';
+  feeds.forEach(({ title, description }) => {
+    const li = document.createElement('li');
+    li.innerHTML = `<strong>${title}</strong><p>${description}</p>`;
+    container.append(li);
+  });
+};
 
-    if (value === 'valid') {
-      elements.input.classList.remove('is-invalid');
-      elements.feedback.textContent = i18n.t('form.success');
-      elements.input.value = '';
-      elements.input.focus();
-    }
-  }
+const renderPosts = (posts, container) => {
+  container.innerHTML = '';
+  posts.forEach(({ title, link }) => {
+    const li = document.createElement('li');
+    const a = document.createElement('a');
+    a.href = link;
+    a.textContent = title;
+    a.target = '_blank';
+    li.append(a);
+    container.append(li);
+  });
+};
 
-  if (path === 'form.error') {
-    elements.feedback.textContent = i18n.t(value);
+export default (elements, i18n) => (path, value, prev) => {
+  switch (path) {
+    case 'feeds':
+      renderFeeds(value, elements.feeds);
+      break;
+
+    case 'posts':
+      renderPosts(value, elements.posts);
+      break;
+
+    case 'form.status':
+      if (value === 'loading') {
+        elements.feedback.textContent = i18n.t('form.loading');
+      }
+      if (value === 'success') {
+        elements.input.value = '';
+        elements.input.focus();
+        elements.feedback.textContent = i18n.t('form.success');
+      }
+      break;
+
+    case 'form.error':
+      elements.feedback.textContent = i18n.t(value);
+      break;
+
+    default:
+      break;
   }
 };

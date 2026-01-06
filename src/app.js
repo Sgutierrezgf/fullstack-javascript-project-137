@@ -1,20 +1,25 @@
 import onChange from 'on-change';
 import { validateUrl } from './validation.js';
+import parseRss from './parser.js';
+import { fetchRss } from './requests.js';
 import initView from './view.js';
 
 export default (i18n) => {
-  const state = {
-    form: {
-      status: 'idle', 
-      error: null,   
-    },
-    feeds: [],
-  };
-
   const elements = {
     form: document.querySelector('.rss-form'),
     input: document.querySelector('.rss-input'),
+    feeds: document.querySelector('.feeds'),
+    posts: document.querySelector('.posts'),
     feedback: document.querySelector('.feedback'),
+  };
+
+  const state = {
+    form: {
+      status: 'idle',
+      error: null,
+    },
+    feeds: [],
+    posts: [],
   };
 
   const watchedState = onChange(state, initView(elements, i18n));
@@ -24,15 +29,26 @@ export default (i18n) => {
 
     const url = elements.input.value.trim();
 
-    validateUrl(url, state.feeds)
+    validateUrl(url, state.feeds.map((f) => f.url))
       .then(() => {
-        watchedState.feeds.push(url);
-        watchedState.form.status = 'valid';
+        watchedState.form.status = 'loading';
+        return fetchRss(url);
+      })
+      .then(parseRss)
+      .then(({ feed, posts }) => {
+        watchedState.feeds.unshift({ ...feed, url });
+        watchedState.posts.unshift(...posts);
+        watchedState.form.status = 'success';
         watchedState.form.error = null;
       })
-      .catch((error) => {
-        watchedState.form.status = 'invalid';
-        watchedState.form.error = error.message; // 👈 código
-      });
+.catch((error) => {
+  watchedState.form.status = 'error';
+
+  if (error.isAxiosError) {
+    watchedState.form.error = 'errors.network';
+  } else {
+    watchedState.form.error = error.message || 'errors.unknown';
+  }
+});
   });
 };
