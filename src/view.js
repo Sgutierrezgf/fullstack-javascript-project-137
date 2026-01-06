@@ -20,7 +20,7 @@ const renderPosts = (posts, container) => {
   });
 };
 
-export default (elements, i18n) => (path, value, prev) => {
+export default (elements, i18n) => (path, value) => {
   switch (path) {
     case 'feeds':
       renderFeeds(value, elements.feeds);
