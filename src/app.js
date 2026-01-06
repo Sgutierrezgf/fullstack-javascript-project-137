@@ -1,8 +1,10 @@
 import onChange from 'on-change';
+import uniqueId from 'lodash/uniqueId.js';
 import { validateUrl } from './validation.js';
 import parseRss from './parser.js';
 import { fetchRss } from './requests.js';
 import initView from './view.js';
+import startUpdater from './updater.js';
 
 export default (i18n) => {
   const elements = {
@@ -24,6 +26,9 @@ export default (i18n) => {
 
   const watchedState = onChange(state, initView(elements, i18n));
 
+  
+  startUpdater(watchedState);
+
   elements.form.addEventListener('submit', (e) => {
     e.preventDefault();
 
@@ -36,19 +41,29 @@ export default (i18n) => {
       })
       .then(parseRss)
       .then(({ feed, posts }) => {
-        watchedState.feeds.unshift({ ...feed, url });
-        watchedState.posts.unshift(...posts);
+        const feedId = uniqueId();
+
+        watchedState.feeds.unshift({ ...feed, url, id: feedId });
+
+        watchedState.posts.unshift(
+          ...posts.map((post) => ({
+            ...post,
+            id: uniqueId(),
+            feedId,
+          }))
+        );
+
         watchedState.form.status = 'success';
         watchedState.form.error = null;
       })
-.catch((error) => {
-  watchedState.form.status = 'error';
+      .catch((error) => {
+        watchedState.form.status = 'error';
 
-  if (error.isAxiosError) {
-    watchedState.form.error = 'errors.network';
-  } else {
-    watchedState.form.error = error.message || 'errors.unknown';
-  }
-});
+        if (error.isAxiosError) {
+          watchedState.form.error = 'errors.network';
+        } else {
+          watchedState.form.error = error.message || 'errors.unknown';
+        }
+      });
   });
 };
