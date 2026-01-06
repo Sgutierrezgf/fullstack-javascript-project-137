@@ -13,6 +13,11 @@ export default (i18n) => {
     feeds: document.querySelector('.feeds'),
     posts: document.querySelector('.posts'),
     feedback: document.querySelector('.feedback'),
+
+    // modal
+    modalTitle: document.querySelector('.modal-title'),
+    modalBody: document.querySelector('.modal-body'),
+    modalLink: document.querySelector('.full-article'),
   };
 
   const state = {
@@ -22,13 +27,18 @@ export default (i18n) => {
     },
     feeds: [],
     posts: [],
+    ui: {
+      visitedPosts: new Set(),
+      modalPostId: null,
+    },
   };
 
-  const watchedState = onChange(state, initView(elements, i18n));
+  const watchedState = onChange(state, initView(elements, i18n, state));
 
-  
+  // 🔁 actualización automática de feeds
   startUpdater(watchedState);
 
+  // 📩 submit RSS
   elements.form.addEventListener('submit', (e) => {
     e.preventDefault();
 
@@ -65,5 +75,14 @@ export default (i18n) => {
           watchedState.form.error = error.message || 'errors.unknown';
         }
       });
+  });
+
+  // 👁️ vista previa / marcar leído (delegación)
+  elements.posts.addEventListener('click', (e) => {
+    const { id } = e.target.dataset;
+    if (!id) return;
+
+    watchedState.ui.visitedPosts.add(id);
+    watchedState.ui.modalPostId = id;
   });
 };
